@@ -67,7 +67,7 @@ See more at https://blog.squix.org
 #define MINI_WHITE 1
 
 
-#define MAX_FORECASTS 20
+#define MAX_FORECASTS 10
 
 // defines the colors usable in the paletted 16 color frame buffer
 uint16_t palette[] = {ILI9341_BLACK, // 0
@@ -78,13 +78,13 @@ uint16_t palette[] = {ILI9341_BLACK, // 0
 #define SCREEN_WIDTH 296
 #define BITS_PER_PIXEL 1
 
-
 EPD_WaveShare epd(EPD2_9, CS, RST, DC, BUSY);
 MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);
 
 OpenWeatherMapCurrentData conditions;
 Astronomy::MoonData moonData;
-OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
+OpenWeatherMapForecastData hourlyForecasts[MAX_FORECASTS];
+OpenWeatherMapForecastData dailyForecasts[MAX_FORECASTS];
 
 // Setup simpleDSTadjust Library rules
 simpleDSTadjust dstAdjusted(StartRule, EndRule);
@@ -96,9 +96,11 @@ void drawProgress(uint8_t percentage, String text);
 void drawTime();
 void drawButtons();
 void drawCurrentWeather();
-void drawForecast();
+void drawHourlyForecast();
+void drawHourlyForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
+void draw3DayForecast();
+void draw3DayForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
 void drawTempChart();
-void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
 void drawAstronomy();
 
 
@@ -106,7 +108,6 @@ void drawBattery();
 String getMeteoconIcon(String iconText);
 const char* getMeteoconIconFromProgmem(String iconText);
 const char* getMiniMeteoconIconFromProgmem(String iconText);
-void drawForecast();
 
 
 long lastDownloadUpdate = millis();
@@ -178,8 +179,12 @@ void setup() {
       drawWifiQuality();
       drawBattery();
       drawCurrentWeather();
-      drawForecast();
+      drawHourlyForecast();
+#if LOWER_RIGHT_WIDGET == '3_DAY_FORECAST'
+      draw3DayForecast();
+#elif LOWER_RIGHT_WIDGET == 'TEMPERATURE_CHART'
       drawTempChart();
+#endif
       drawAstronomy();
       drawButtons();
       gfx.commit();
@@ -212,10 +217,21 @@ void updateData() {
   delete conditionsClient;
   conditionsClient = nullptr;
 
+  // Update hourly forecast
   OpenWeatherMapForecast *forecastsClient = new OpenWeatherMapForecast();
   forecastsClient->setMetric(IS_METRIC);
   forecastsClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
-  foundForecasts = forecastsClient->updateForecastsById(forecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID, MAX_FORECASTS);
+  foundForecasts = forecastsClient->updateForecastsById(hourlyForecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID, MAX_FORECASTS);
+  delete forecastsClient;
+  forecastsClient = nullptr;
+
+  // Update daily (3-day) forecast
+  forecastsClient = new OpenWeatherMapForecast();
+  forecastsClient->setMetric(IS_METRIC);
+  forecastsClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
+  uint8_t allowedHours[] = {12};
+  forecastsClient->setAllowedHours(allowedHours, sizeof(allowedHours));
+  forecastsClient->updateForecastsById(dailyForecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID, MAX_FORECASTS);
   delete forecastsClient;
   forecastsClient = nullptr;
 
@@ -314,23 +330,23 @@ unsigned int hourAddWrap(unsigned int hour, unsigned int add) {
   return hour;
 }
 
-void drawForecast() {
+void drawHourlyForecast() {
   time_t now = dstAdjusted.time(nullptr);
   struct tm * timeinfo = localtime (&now);
   
   unsigned int curHour = timeinfo->tm_hour;
   if(timeinfo->tm_min > 29) curHour = hourAddWrap(curHour, 1);
 
-  drawForecastDetail(SCREEN_WIDTH / 2 - 35, 15, 0);
-  drawForecastDetail(SCREEN_WIDTH / 2 - 1, 15, 1);
-  drawForecastDetail(SCREEN_WIDTH / 2 + 37, 15, 2);
-  drawForecastDetail(SCREEN_WIDTH / 2 + 73, 15, 3);
-  drawForecastDetail(SCREEN_WIDTH / 2 + 109, 15, 4);
+  drawHourlyForecastDetail(SCREEN_WIDTH / 2 - 35, 15, 0);
+  drawHourlyForecastDetail(SCREEN_WIDTH / 2 - 1, 15, 1);
+  drawHourlyForecastDetail(SCREEN_WIDTH / 2 + 37, 15, 2);
+  drawHourlyForecastDetail(SCREEN_WIDTH / 2 + 73, 15, 3);
+  drawHourlyForecastDetail(SCREEN_WIDTH / 2 + 109, 15, 4);
 }
 
 // helper for the forecast columns
-void drawForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
-  time_t observation = forecasts[index].observationTime + dstOffset;
+void drawHourlyForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
+  time_t observation = hourlyForecasts[index].observationTime + dstOffset;
   struct tm* observationTm = localtime(&observation);
 
   gfx.setColor(MINI_BLACK);
@@ -338,13 +354,40 @@ void drawForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
 
   gfx.drawString(x + 19, y - 2, String(observationTm->tm_hour) + ":00");
-  gfx.drawString(x + 19, y + 9, String(forecasts[index].temp,0) + "°");
-  gfx.drawString(x + 19, y + 36, String(forecasts[index].rain,0) + (IS_METRIC ? "mm" : "in"));
+  gfx.drawString(x + 19, y + 9, String(hourlyForecasts[index].temp,0) + "°");
+  gfx.drawString(x + 19, y + 36, String(hourlyForecasts[index].rain,0) + (IS_METRIC ? "mm" : "in"));
 
   gfx.setFont(Meteocons_Plain_21);
-  gfx.drawString(x + 19, y + 20, forecasts[index].iconMeteoCon);
+  gfx.drawString(x + 19, y + 20, hourlyForecasts[index].iconMeteoCon);
   gfx.drawLine(x + 2, 12, x + 2, 65);
 
+}
+
+void draw3DayForecast() {
+  gfx.setColor(MINI_BLACK);
+  gfx.fillRect(SCREEN_WIDTH / 2 + 1, 66, SCREEN_WIDTH, 50);
+  draw3DayForecastDetail(SCREEN_WIDTH / 2 + 10, 67, 0);
+  draw3DayForecastDetail(SCREEN_WIDTH / 2 + 55, 67, 1);
+  draw3DayForecastDetail(SCREEN_WIDTH / 2 + 100, 67, 2);
+}
+
+// Helper for the 3 day forecast columns
+void draw3DayForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
+  time_t observationTimestamp = dailyForecasts[index].observationTime;
+  struct tm* timeInfo;
+  timeInfo = localtime(&observationTimestamp);
+
+  gfx.setColor(MINI_WHITE);
+  gfx.setFont(ArialMT_Plain_10);
+  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+  gfx.drawString(x + 20, y, WEEKDAYS[timeInfo->tm_wday]);
+
+  gfx.setFont(Meteocons_Plain_21);
+  gfx.drawString(x + 20, y + 12, dailyForecasts[index].iconMeteoCon);
+  String temp = String(dailyForecasts[index].temp, 0) + (IS_METRIC ? "°C" : "°F");
+  gfx.setFont(ArialMT_Plain_10);
+  gfx.drawString(x + 20, y + 34, temp);
+  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
 }
 
 void drawTempChart() {
@@ -354,7 +397,7 @@ void drawTempChart() {
   float minTemp = 999;
   float maxTemp = -999;
   for (int i = 0; i < foundForecasts; i++) {
-    float temp = forecasts[i].temp;
+    float temp = hourlyForecasts[i].temp;
     if (temp > maxTemp) {
       maxTemp = temp;
     }
@@ -380,7 +423,7 @@ void drawTempChart() {
   gfx.drawString(chartX - 5, chartY + maxHeight - 5, String(minTemp, 0) + "°");
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   for (uint8_t i = 0; i < foundForecasts; i++) {
-    float temp = forecasts[i].temp;
+    float temp = hourlyForecasts[i].temp;
     float height = (temp - minTemp) * maxHeight / range;
     uint16_t x = chartX + i* barWidth;
     uint16_t y = chartY + maxHeight - height;
@@ -392,7 +435,7 @@ void drawTempChart() {
     
     if ((i - 3) % 8 == 0) {
       gfx.drawLine(x, chartY + maxHeight, x, chartY + maxHeight - 3);
-      gfx.drawString(x, chartY + maxHeight, getTime(forecasts[i].observationTime));
+      gfx.drawString(x, chartY + maxHeight, getTime(hourlyForecasts[i].observationTime));
     }
     lastX = x; 
     lastY = y;
