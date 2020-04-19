@@ -24,6 +24,14 @@ See more at https://blog.squix.org
   copies of the Software, and to permit persons to whom the Software is
 */
 
+/* Hardware settings:
+ * ThingPulse 2.9´´ ESPaper:
+ * Generic ESP8266 Module, Flash Mode: QIO (fast), Flash Size: 2MB (FS:1MB OTA:~512KB)
+ *
+ * AZSMZ epaper:
+ * NodeMCU 1.0 (ESP-12E Module), 160 MHz, Flash, 4M (1M SPIFFS), v2 Lower Memory, Disabled, None, Only Sketch, 230400
+ */
+
 
 /*****************************
    Important: see settings.h to configure your settings!!!
