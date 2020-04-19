@@ -373,8 +373,10 @@ void drawHourlyForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
 }
 
 void draw3DayForecast() {
-  gfx.setColor(MINI_BLACK);
+  gfx.setColor(MINI_WHITE);
   gfx.fillRect(SCREEN_WIDTH / 2 + 1, 66, SCREEN_WIDTH, 50);
+  gfx.setColor(MINI_BLACK);
+  gfx.drawLine(SCREEN_WIDTH / 2 + 1, 66, SCREEN_WIDTH / 2 + 1, 116);
   draw3DayForecastDetail(SCREEN_WIDTH / 2 + 10, 67, 0);
   draw3DayForecastDetail(SCREEN_WIDTH / 2 + 55, 67, 1);
   draw3DayForecastDetail(SCREEN_WIDTH / 2 + 100, 67, 2);
@@ -386,7 +388,7 @@ void draw3DayForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
   struct tm* timeInfo;
   timeInfo = localtime(&observationTimestamp);
 
-  gfx.setColor(MINI_WHITE);
+  gfx.setColor(MINI_BLACK);
   gfx.setFont(ArialMT_Plain_10);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.drawString(x + 20, y, WEEKDAYS[timeInfo->tm_wday]);
