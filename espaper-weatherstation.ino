@@ -139,6 +139,7 @@ boolean connectWifi() {
   Serial.print("[");
   Serial.print(WIFI_PASS.c_str());
   Serial.print("]");
+  WiFi.hostname("ESPaperWeather");
   WiFi.begin(WIFI_SSID.c_str(), WIFI_PASS.c_str());
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
