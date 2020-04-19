@@ -519,9 +519,9 @@ int8_t getWifiQuality() {
 }
 
 uint8_t getDigits(uint8_t number) {
-  int digits = 0; 
-  do { 
-    number /= 10; 
+  int digits = 0;
+  do {
+    number /= 10;
     digits++;
   } while (number != 0);
   return digits;
@@ -533,7 +533,7 @@ void drawWifiQuality() {
 
   // 6 pixels per digit
   uint8_t offset = 69 - (6 * (getDigits(quality) + getDigits(batteryData.percentage)));
-  
+
   gfx.setColor(MINI_BLACK);
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   for (int8_t i = 0; i < 4; i++) {
@@ -559,6 +559,6 @@ void drawButtons() {
   gfx.drawLine(2 * third, SCREEN_HEIGHT - 12, 2 * third, SCREEN_HEIGHT);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setFont(ArialMT_Plain_10);
-  gfx.drawString(0.5 * third, SCREEN_HEIGHT - 12, FPSTR(TEXT_CONFIG_BUTTON));
+  gfx.drawString(third, SCREEN_HEIGHT - 12, FPSTR(TEXT_CONFIG_BUTTON));
   gfx.drawString(2.5 * third, SCREEN_HEIGHT - 12, FPSTR(TEXT_REFRESH_BUTTON));
 }
