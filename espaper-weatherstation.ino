@@ -163,7 +163,7 @@ void setup() {
   gfx.init();
   gfx.setRotation(1);
   gfx.setFastRefresh(false);
-  
+
   // load config if it exists. Otherwise use defaults.
   boolean mounted = SPIFFS.begin();
   if (!mounted) {
@@ -310,7 +310,7 @@ void drawCurrentWeather() {
   gfx.setColor(MINI_BLACK);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setFont(Meteocons_Plain_42);
-  gfx.drawString(25, 20, conditions.iconMeteoCon);
+  gfx.drawString(25, 12, conditions.iconMeteoCon);
 
   gfx.setColor(MINI_BLACK);
   gfx.setFont(ArialMT_Plain_10);
@@ -322,8 +322,8 @@ void drawCurrentWeather() {
   gfx.drawString(55, 25, String(conditions.temp,0) + (IS_METRIC ? "°C" : "°F") );
 
   gfx.setFont(ArialMT_Plain_10);
-  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-  gfx.drawString(55, 51, conditions.description);
+  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+  gfx.drawString(56, 52, conditions.description);
   gfx.drawLine(0, 65, SCREEN_WIDTH, 65);
   // Remove any condition description that's too long by "covering" it with a white rectangle.
   // It'll later be drawn over by the forecast boxes.
@@ -342,7 +342,7 @@ unsigned int hourAddWrap(unsigned int hour, unsigned int add) {
 void drawHourlyForecast() {
   time_t now = dstAdjusted.time(nullptr);
   struct tm * timeinfo = localtime (&now);
-  
+
   unsigned int curHour = timeinfo->tm_hour;
   if(timeinfo->tm_min > 29) curHour = hourAddWrap(curHour, 1);
 
@@ -364,7 +364,7 @@ void drawHourlyForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
 
   gfx.drawString(x + 19, y - 2, String(observationTm->tm_hour) + ":00");
   gfx.drawString(x + 19, y + 9, String(hourlyForecasts[index].temp,0) + "°");
-  gfx.drawString(x + 19, y + 36, String(hourlyForecasts[index].rain,0) + (IS_METRIC ? "mm" : "in"));
+  gfx.drawString(x + 19, y + 37, String(hourlyForecasts[index].rain,0) + (IS_METRIC ? "mm" : "in"));
 
   gfx.setFont(Meteocons_Plain_21);
   gfx.drawString(x + 19, y + 20, hourlyForecasts[index].iconMeteoCon);
@@ -441,12 +441,12 @@ void drawTempChart() {
       lastY = y;
     }
     gfx.drawLine(x, y, lastX, lastY);
-    
+
     if ((i - 3) % 8 == 0) {
       gfx.drawLine(x, chartY + maxHeight, x, chartY + maxHeight - 3);
       gfx.drawString(x, chartY + maxHeight, getTime(hourlyForecasts[i].observationTime));
     }
-    lastX = x; 
+    lastX = x;
     lastY = y;
   }
 }
@@ -454,7 +454,7 @@ void drawTempChart() {
 String getTime(time_t timestamp) {
   time_t time = timestamp + dstOffset;
   struct tm *timeInfo = localtime(&time);
-  
+
   char buf[6];
   sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
   return String(buf);
@@ -490,7 +490,7 @@ BatteryData calculateBatteryData() {
 
   data.percentage = percentage;
   data.voltage = voltage;
-  
+
   return data;
 }
 
@@ -501,7 +501,7 @@ void drawBattery() {
   gfx.setFont(ArialMT_Plain_10);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.drawString(SCREEN_WIDTH - 22, -1, String(data.voltage, 2) + "V " + String(data.percentage) + "%");
-  gfx.drawRect(SCREEN_WIDTH - 22, 0, 19, 10);
+  gfx.drawRect(SCREEN_WIDTH - 22, 0, 19, 9);
   gfx.fillRect(SCREEN_WIDTH - 2, 2, 2, 6);
   gfx.fillRect(SCREEN_WIDTH - 20, 2, 16 * data.percentage / 100, 6);
 }
